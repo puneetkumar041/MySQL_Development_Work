@@ -1,0 +1,75 @@
+SELECT * FROM information_schema.processlist
+WHERE user='user';
+#################
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS test.purge_idle$$
+CREATE PROCEDURE test.purge_idle()
+BEGIN 
+DECLARE c_id BIGINT(21);
+DECLARE done_handler INT(5) DEFAULT '0';
+DECLARE done INT DEFAULT 0;
+DECLARE c CURSOR FOR SELECT id FROM information_schema.processlist
+WHERE user='user_nexsp' 
+ORDER BY TIME  DESC;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET done=TRUE;
+SET done = 0;
+
+
+CREATE TABLE IF NOT EXISTS test.`purge_connection_log` (
+`id` BIGINT(21) UNSIGNED NOT NULL DEFAULT '0',
+`query_user` VARCHAR(16) CHARACTER SET utf8 NOT NULL DEFAULT '',
+`query_host` VARCHAR(64) CHARACTER SET utf8 NOT NULL DEFAULT '',
+`query_time` INT(7) NOT NULL DEFAULT '0',
+`query_info` LONGTEXT CHARACTER SET utf8,
+`insert_time` DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00' ,
+KEY `query_user` (`query_user`),
+KEY `query_host` (`query_host`),
+KEY `query_time` (`query_time`),
+KEY `query_info` (`query_info`(255)),
+KEY `insert_time` (`insert_time`)
+) ENGINE=INNODB DEFAULT CHARSET=latin1;
+
+
+INSERT INTO test.purge_connection_log(id,query_user,query_host,query_time,query_info,insert_time)
+SELECT  id, USER AS query_user,HOST AS query_host,TIME AS query_time,info AS query_info,NOW() AS insert_time  
+FROM information_schema.PROCESSLIST
+WHERE user='user' 
+ORDER BY TIME  DESC;
+--       
+OPEN c;
+REPEAT
+FETCH  c  INTO c_id ;
+IF NOT done THEN 
+
+Kill (c_id);
+
+SET done = done_handler;
+END IF;      
+UNTIL done END REPEAT;
+CLOSE c;
+END $$
+DELIMITER ;
+
+############
+
+
+CALL test.purge_idle();
+
+select * from test.purge_connection_log;
+
+
+#DROP EVENT  tempo.schedule_test;
+
+DELIMITER $$
+
+create EVENT  test.purge_idle_connection
+ON SCHEDULE EVERY 10 second STARTS '2022-02-14 17:06:41' ON COMPLETION
+PRESERVE  DO 
+BEGIN
+CALL test.purge_idle();
+END$$
+
+DELIMITER ; 
+
+ALTER event test.purge_idle_connection ENABLE;
