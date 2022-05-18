@@ -1,0 +1,100 @@
+USE `inventory`;
+DROP procedure IF EXISTS `Sp_monitor`;
+
+DELIMITER $$
+USE `inventory`$$
+CREATE DEFINER=`db_user`@`%` PROCEDURE `Sp_monitor`(IN insertFlag TINYINT(1), IN facility VARCHAR(15))
+BEGIN
+DECLARE fr1, fr0_bulk, fr0_others, fr0_eg, fr0_sg, fr0_cl, fr2, tbyb, associate, express_orders SMALLINT(5) DEFAULT 0;
+DECLARE facility_code VARCHAR(15) DEFAULT '';
+
+DECLARE CURSOR_GET_UNSYNCED_ORDERS CURSOR FOR
+SELECT
+COUNT(DISTINCT o.item_id) AS count1,
+IF((p.value LIKE 'E-Gift Voucher'), 1, 0) AS watch,
+SUM(IF(p.classification = 11357, 1, 0)) AS sun,
+SUM(IF(p.classification = 11354, 1, 0)) AS contact,
+SUM(IF(p.classification = 11355, 1, 0)) AS eye,
+SUM(IF(uwo.fitting = 'reqd', 1, 0)) AS fitting_reqd,
+SUM(IF(uwo.fitting = 'not_reqd', 1, 0)) AS fitting_not_reqd,
+SUM(IF(uwo.fitting = 'done', 1, 0)) AS fitting_done,
+IF(SUBSTR(o.offer_3orfree, -2, 1) = 1, 1, 0 ) AS tbyb_flag,
+IF(SUBSTR(o.offer_3orfree, -8, 1) = 1, 1, 0 ) AS bulk_flag,
+SUM(IF(uwo.order_type = 'express',1,0)) AS express_orders,
+uwo.facility_code AS facility
+FROM `products` p
+INNER JOIN 3Sep.sales_flat_order s
+INNER JOIN `orders` o
+INNER JOIN inventory.`uw_orders` uwo ON o.`increment_id` = uwo.`increment_id`  
+WHERE o.order_id=s.entity_id
+AND ADDTIME(s.updated_at,'0 5:30:0') <DATE_SUB(NOW(),INTERVAL 10 MINUTE)
+AND p.product_id = o.`product_id`
+AND p.classification NOT IN (13349,11365,13287)
+AND o.`status` LIKE  'processing'
+AND o.`unicom_order_status` = 'pendingCreation'
+AND o.unicom_syn_status='No'
+AND uwo.`facility_code` in (facility)   /* IN('DK02')  */
+AND (p.classification  NOT IN ('11354','11356') OR  (p.classification IN ('11354','11356') AND p.product_id > '70000000' ) OR (p.classification= '11355' AND p.sku LIKE '%reading%' AND p.product_id > '60000000') OR p.classification='18585' )
+GROUP BY o.`increment_id`
+HAVING (count1 != 2  OR !(count1 = 2 AND watch = 1) ) ORDER BY o.`created_at` DESC;
+
+IF ( insertFlag = 1 ) THEN
+OPEN CURSOR_GET_UNSYNCED_ORDERS;
+BEGIN
+DECLARE itemCount, sunCount, contactCount, eyeCount, fittingReqd, fittingNotReqd, fittingDone, expressOrders SMALLINT(5);
+DECLARE tbybFlag, watchFlag, bulkFlag TINYINT(1);
+DECLARE facility VARCHAR(15);
+DECLARE done BOOLEAN DEFAULT FALSE;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+ReadData: LOOP
+FETCH CURSOR_GET_UNSYNCED_ORDERS INTO itemCount, watchFlag, sunCount, contactCount, eyeCount, fittingReqd, fittingNotReqd, fittingDone, tbybFlag, bulkFlag, expressOrders,facility;
+IF done THEN
+LEAVE ReadData;
+END IF;
+SET facility_code = facility;
+IF ( expressOrders > 0 ) THEN
+SET express_orders = express_orders + 1;
+END IF;
+IF ( tbybFlag =1 ) THEN
+SET tbyb = tbyb + 1;
+ELSE IF ((eyeCount > 0 AND sunCount>0) OR (eyeCount>0 AND contactCount>0) OR (sunCount>0 AND contactCount>0)) THEN
+SET associate = associate + 1;
+
+ELSE IF ( eyeCount > 0 AND (fittingReqd > 0 OR fittingDone > 0 ) ) THEN
+SET fr1 = fr1 + 1;
+
+ELSE IF ( sunCount > 0 AND (fittingReqd > 0 OR fittingDone > 0 ) ) THEN
+SET fr2 = fr2 + 1;
+ELSE IF ( bulkFlag = 1 ) THEN
+SET fr0_bulk = fr0_bulk + 1;
+ELSE IF ( eyeCount = 0 AND contactCount = 0 AND sunCount = 0 ) THEN
+SET fr0_others = fr0_others + 1;
+ELSE IF ( eyeCount > 0 ) THEN
+SET fr0_eg = fr0_eg + 1;
+ELSE IF ( sunCount > 0 ) THEN
+SET fr0_sg = fr0_sg + 1;
+ELSE
+SET fr0_cl = fr0_cl + 1;
+     END IF;
+     END IF;
+     END IF;
+     END IF;
+END IF;
+END IF;
+END IF;
+END IF;
+END LOOP;
+END;
+CLOSE CURSOR_GET_UNSYNCED_ORDERS;
+IF (facility_code != '') THEN
+INSERT INTO monitor_shipment_count( data_type, fr1, fr0, fr0_bulk, fr0_others, fr0_eg, fr0_sg, fr0_cl, fr2, tbyb, associate,express_orders,facility_code )
+VALUES( 1, fr1, (fr0_bulk + fr0_others + fr0_eg + fr0_sg + fr0_cl), fr0_bulk, fr0_others, fr0_eg, fr0_sg, fr0_cl, fr2, tbyb, associate, express_orders,facility_code) ON DUPLICATE KEY UPDATE data_type=VALUES(data_type), fr1 = VALUES(fr1), fr0 = VALUES(fr0), fr0_bulk = VALUES(fr0_bulk), fr0_others = VALUES(fr0_others), fr0_eg = VALUES(fr0_eg), fr0_sg = VALUES(fr0_sg), fr0_cl = VALUES(fr0_cl) ,fr2 = VALUES(fr2), tbyb = VALUES(tbyb), associate = VALUES(associate), express_orders = VALUES(express_orders),facility_code = VALUES(facility_code);
+END IF;
+SELECT 1;
+ELSE
+SELECT * FROM monitor_shipment_count msc WHERE msc.data_type = 1;
+END IF;
+END$$
+
+DELIMITER ;
