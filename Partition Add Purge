@@ -1,0 +1,228 @@
+-- create partion 
+
+ drop table if exists trb1;
+ CREATE TABLE trb1 (id INT, name VARCHAR(50), purchased DATE)
+    PARTITION BY RANGE(id)
+    (
+        PARTITION p0 VALUES LESS THAN (3),
+        PARTITION p1 VALUES LESS THAN (7),
+        PARTITION p2 VALUES LESS THAN (9),
+        PARTITION p3 VALUES LESS THAN (11),
+        PARTITION p4 VALUES LESS THAN (13),
+        PARTITION p5 VALUES LESS THAN (17),
+        PARTITION pmax VALUES LESS THAN MAXVALUE
+    );
+
+
+
+INSERT INTO trb1 VALUES
+    (1, 'desk organiser', '2003-10-15'),
+    (2, 'CD player', '1993-11-05'),
+    (3, 'TV set', '1996-03-10'),
+    (4, 'bookcase', '1982-01-10'),
+    (5, 'exercise bike', '2004-05-09'),
+    (6, 'sofa', '1987-06-05'),
+    (7, 'popcorn maker', '2001-11-22'),
+    (8, 'aquarium', '1992-08-04'),
+    (9, 'study desk', '1984-09-16'),
+    (10, 'lava lamp', '1998-12-25'),
+    (19, 'Jhogn lava ', '1991-01-15');
+
+
+-- Add partition
+ALTER TABLE trb1 ADD PARTITION (
+    PARTITION p6 VALUES LESS THAN (19),
+);
+
+
+-- Drop partition
+
+ALTER TABLE trb1 DROP PARTITION p6;
+
+
+-- reorganize partition
+ALTER TABLE trb1
+    REORGANIZE PARTITION p6 INTO (
+        PARTITION p6 VALUES LESS THAN (21),
+        PARTITION pmax  VALUES LESS THAN MAXVALUE) ;
+
+
+
+
+-- if no pmax value defined. and we insert value greater than range defined 
+ERROR 1526 (HY000): Table has no partition for value 1420137000
+
+
+
+++++++++++++++++++++++++++
+-- keep last 2 partion and remove rest
+++++++++++++++++++++++++++
+
+SELECT 
+group_concat(partition_name order by partition_ordinal_position) original_partition,
+substring_index(group_concat(partition_name order by partition_ordinal_position),',',-2) as keep_last_2,
+TRIM( both ',' from replace(group_concat(partition_name order by partition_ordinal_position),substring_index(group_concat(partition_name order by partition_ordinal_position),',',-2),'')) as final_removal,
+concat("ALTER TABLE ",table_name, " DROP PARTITION ",TRIM( both ',' from replace(group_concat(partition_name order by partition_ordinal_position),substring_index(group_concat(partition_name order by partition_ordinal_position),',',-2),'')),";") as removal_query
+FROM information_schema.partitions WHERE TABLE_SCHEMA='test' 
+and partition_name!=''
+group by table_name;
+
+++++++++++++++++++++++++++
+
+`-- automate partitions::`
+
+http://mysql-nordic.blogspot.com/2020/05/automate-mysql-partitioning-using.html
+
+++++++++++++++++++++++++++
+
+
+
+CREATE TABLE IF NOT EXISTS `MyPartTables` (
+  `schema_name` VARCHAR(100) NOT NULL,
+  `table_name` VARCHAR(100) NOT NULL,
+  `no_of_future_partitions` INT NOT NULL,
+  `max_partitions` INT NOT NULL,
+  PRIMARY KEY (`schema_name`,`table_name`)
+);
+
+INSERT INTO MyPartTables VALUES ('ted','logs',2,20);
+
+ALTER TABLE logs PARTITION BY RANGE COLUMNS(created) (
+    PARTITION p20200217 VALUES LESS THAN ('2020-02-17'),
+    PARTITION p20200218 VALUES LESS THAN ('2020-02-18'),
+    PARTITION p20200219 VALUES LESS THAN ('2020-02-19'),
+    PARTITION p20200220 VALUES LESS THAN ('2020-02-20'),
+    PARTITION p20200221 VALUES LESS THAN ('2020-02-21')
+);
+       
+CREATE TABLE IF NOT EXISTS `MyPartTables` (
+  `schema_name` VARCHAR(100) NOT NULL,
+  `table_name` VARCHAR(100) NOT NULL,
+  `no_of_future_partitions` INT NOT NULL,
+  `max_partitions` INT NOT NULL,
+  PRIMARY KEY (`schema_name`,`table_name`)
+);
+
+INSERT INTO MyPartTables VALUES ('ted','logs',2,20);
+
+
+
+CREATE PROCEDURE `AddPartitions`()
+BEGIN
+  DECLARE done   BOOL DEFAULT FALSE;
+  DECLARE maxp   INT DEFAULT 0;
+  DECLARE pdate  INT DEFAULT 0;
+  DECLARE pname  VARCHAR(20);    
+  DECLARE v_table_name  VARCHAR(100);
+  DECLARE v_schema_name  VARCHAR(100);
+  DECLARE v_no_future_part INT;
+
+  DECLARE list CURSOR FOR SELECT `table_name`,`schema_name`,`no_of_future_partitions` FROM MyPartTables;
+
+  DECLARE CONTINUE HANDLER FOR
+  SQLSTATE '02000'
+  SET done = TRUE;
+
+  OPEN list;
+  tloop: LOOP
+    IF done THEN
+      CLOSE list;
+      LEAVE tloop;
+    END IF;
+
+    FETCH list INTO v_table_name,v_schema_name,v_no_future_part;
+    -- DEBUG SELECT v_table_name,v_schema_name,v_no_future_part;
+
+    SET pdate=TO_DAYS(DATE(NOW() + INTERVAL (v_no_future_part) DAY));
+    SELECT TO_DAYS(TRIM(BOTH "'" FROM MAX(PARTITION_DESCRIPTION))) INTO maxp
+           FROM INFORMATION_SCHEMA.PARTITIONS
+           WHERE TABLE_NAME=v_table_name
+           AND TABLE_SCHEMA=v_schema_name
+           AND PARTITION_DESCRIPTION!="MAXVALUE";
+    -- DEBUG' SELECT pdate, maxp;
+
+    WHILE pdate > maxp DO
+       SET maxp = maxp + 1;
+       SET pname = CONCAT('p', DATE_FORMAT(FROM_DAYS(maxp), '%Y%m%d'));
+       SET @qry = CONCAT('ALTER TABLE ',v_schema_name,'.',v_table_name, ' ADD PARTITION (PARTITION ',pname,' VALUES LESS THAN ("',DATE_FOR
+MAT(FROM_DAYS(maxp),'%Y-%m-%d'),'"))');
+       -- DEBUG SELECT @qry;
+       PREPARE stmt FROM @qry;
+       EXECUTE stmt;
+       DEALLOCATE PREPARE stmt;
+    END WHILE;
+  END LOOP;
+END ;;
+
+
+CREATE PROCEDURE RemovePartitions ()
+BEGIN
+  DECLARE done BOOL DEFAULT FALSE;
+  DECLARE v_table_name  VARCHAR(100);
+  DECLARE v_schema_name  VARCHAR(100);
+  DECLARE v_max_partitions INT;
+  DECLARE v_no_of_partitions_to_remove INT;
+
+  DECLARE cur CURSOR FOR SELECT `table_name`,`schema_name`,`max_partitions` FROM MyPartTables;
+
+  DECLARE CONTINUE HANDLER FOR
+  SQLSTATE '02000'
+  SET done = TRUE;
+
+  OPEN cur;
+
+  tloop: LOOP
+    FETCH cur INTO v_table_name,v_schema_name,v_max_partitions;
+    IF done THEN
+      CLOSE cur;
+      LEAVE tloop;
+    END IF;
+    -- DEBUG SELECT v_table_name,v_schema_name,v_max_partitions;
+    SET @qry = CONCAT('SELECT COUNT(DISTINCT(PARTITION_DESCRIPTION)) INTO @v_no_of_partitions ',
+                     'FROM INFORMATION_SCHEMA.PARTITIONS ',
+                     'WHERE TABLE_NAME="',v_table_name, '" ',
+                     'AND TABLE_SCHEMA = "',v_schema_name, '" ');
+    -- DEBUG SELECT @qry;
+    PREPARE stmt FROM @qry;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+    -- DEBUG SELECT @v_no_of_partitions, v_max_partitions;
+
+    IF @v_no_of_partitions > v_max_partitions THEN
+      SET v_no_of_partitions_to_remove = @v_no_of_partitions - v_max_partitions;
+      SET @qry = CONCAT('SELECT GROUP_CONCAT(DISTINCT(PARTITION_NAME)) INTO @v_list_of_partitions_to_remove FROM ( ',
+                            'SELECT PARTITION_NAME ',
+                            'FROM INFORMATION_SCHEMA.PARTITIONS ',
+                            'WHERE TABLE_NAME = "',v_table_name, '" ',
+                            'AND TABLE_SCHEMA = "',v_schema_name, '" ',
+                            'AND PARTITION_DESCRIPTION!="MAXVALUE" ',
+                            'ORDER BY PARTITION_DESCRIPTION LIMIT ',v_no_of_partitions_to_remove,
+                            ' ) as slabb');
+      -- DEBUG SELECT @qry;
+      -- DEBUG SELECT @v_partitions_to_remove;
+      PREPARE stmt FROM @qry;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+
+      SET @qry = CONCAT('ALTER TABLE ',v_table_name, ' DROP PARTITION ', @v_list_of_partitions_to_remove);
+      -- DEBUG SELECT @qry;
+      PREPARE stmt FROM @qry;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+    END IF;
+  END LOOP;
+END ;;
+
+
+
+CREATE EVENT AddPartitions ON SCHEDULE EVERY 1 DAY
+DO
+  BEGIN
+  CALL AddPartitions();
+END ;;
+
+CREATE EVENT RemovePartitions ON SCHEDULE EVERY 1 DAY
+DO
+  BEGIN
+  CALL RemovePartitions();
+END ;;
