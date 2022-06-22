@@ -1,0 +1,61 @@
+#schema
+
+CREATE TABLE `sales_table` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `Employee_Name` varchar(45) NOT NULL,
+  `Years` int(11) NOT NULL,
+  `Country` varchar(45) NOT NULL,
+  `Product` varchar(45) NOT NULL,
+  `Sale` decimal(12,2) NOT NULL,
+  `ranking` int(11) DEFAULT 0,
+  `sale_scheme` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=latin1
+
+
+
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (1,'Stephen',2017,'India','Laptop',10000.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (2,'Stephen',2018,'India','Laptop',15000.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (3,'Stephen',2019,'India','TV',20000.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (4,'Bob',2017,'US','Computer',15000.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (5,'Bob',2018,'','Computer',10000.00,0,NULL);
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (6,'Bob',2019,'','TV',20000.00,0,NULL);
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (7,'Mandy',2017,'','Mobile',20000.00,0,NULL);
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (8,'Mandy',2018,'','Calculator',1500.00,0,NULL);
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (9,'Mandy',2019,'Canada','Mobile',25000.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (10,'Stephen',1917,'India','Laptop',10000.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (11,'Stephen',1918,'India','Laptop',35000.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (12,'Stephen',1919,'India','TV',40000.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (13,'Bob',1917,'US','Computer',15000.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (14,'Stephen',1917,'India','Laptop',10500.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (15,'Stephen',1918,'India','Laptop',15500.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (16,'Stephen',1919,'India','TV',20500.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (17,'Bob',1917,'US','Computer',25000.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (18,'Mandy',2021,'Canada','Mobile',20000.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (19,'Mandy',2021,'Canada','Calculator',1500.00,0,'active');
+INSERT INTO `sales_table` (`id`,`Employee_Name`,`Years`,`Country`,`Product`,`Sale`,`ranking`,`sale_scheme`) VALUES (20,'Mandy',2021,'Canada','Mobile',35000.00,0,'active');
+
+#####################################################
+
+#query to find rankings or nth highest/lowest
+
+select id,employee_name, years,sale,ROW_NUMBER() OVER (PARTITION BY employee_name ORDER BY years
+
+
+select * from 
+(select id,employee_name, years,sale,ROW_NUMBER() OVER (PARTITION BY employee_name ORDER BY years) AS rank
+          FROM sales_table) a where rank=3;
+          
+OR
+
+set @pos=3;
+select id,employee_name,
+REPLACE(SUBSTRING(SUBSTRING_INDEX(sale, ',', @pos)  ,LENGTH(SUBSTRING_INDEX(sale,  ',', @pos-1)) + 1), ',', '') as sale,
+REPLACE(SUBSTRING(SUBSTRING_INDEX(years, ',', @pos)  ,LENGTH(SUBSTRING_INDEX(years,  ',', @pos-1)) + 1), ',', '') as years
+from (
+select id,employee_name,group_concat(sale order by years) as sale,group_concat(years order by years)years 
+from sales_table #where employee_name='bob'
+group by employee_name)a;
+
+
+
