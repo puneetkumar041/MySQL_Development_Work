@@ -1,7 +1,7 @@
 <img width="150" alt="Screenshot 2023-02-17 at 9 48 17 AM" src="https://user-images.githubusercontent.com/25247630/219548391-874c9fe8-45c8-46a0-ae7e-425659632eb3.png">
 
 
-### Development Tasks for Day to Day Activities including stored procedures, cursors, events... 
+### ⚡ Development Tasks for Day to Day Activities including stored procedures, cursors, events... 
 
 <img width="180" alt="image" src="https://user-images.githubusercontent.com/25247630/219543934-9b5d5fd8-1b72-4173-b3a4-f16499f954b3.png">
 
