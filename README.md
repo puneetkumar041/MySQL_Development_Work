@@ -1,6 +1,6 @@
 ### Scripts for Day to Day tasks and regular DBA activities 
 
-![SHELL SCRIPT](https://img.shields.io/badge/Shell_Script-121011?style=for-the-badge&logo=gnu-bash&logoColor=white)
+![MySQL](https://img.shields.io/badge/-MySQL-black?style=flat-square&logo=mysql)
 
 ### Partitioning
 
@@ -15,9 +15,24 @@ The following are the benefits of partitioning in MySQL:
 
 *) It provides more control to manage the data in your database.
 
+Types of MySQL Partitioning
+MySQL has mainly six types of partitioning, which are given below:
 
+*) RANGE Partitioning
+*) LIST Partitioning
+*) COLUMNS Partitioning
+*) HASH Partitioning
+*) KEY Partitioning
+*) Subpartitioning
 
+Here in this branch we have discussed about Range Partitining 
  
+ ### MySQL RANGE Partitioning
+
+This partitioning allows us to partition the rows of a table based on column values that fall within a specified range. The given range is always in a contiguous form but should not overlap each other, and also uses the VALUES LESS THAN operator to define the ranges.
+
+
+
 ### Server Monitoring 
 
 Server monitoring helps to monitor your servers and entire infrastructure for critical performance metrics and stay on top of your data center resources. Get in-depth visibility into key performance indicators of your application servers, mail servers, web servers, virtual servers, and database servers to eliminate outages and performance issues
