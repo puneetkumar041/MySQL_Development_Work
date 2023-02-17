@@ -1,6 +1,68 @@
-### Scripts for Day to Day tasks and regular DBA activities 
 
 ![MySQL](https://img.shields.io/badge/-MySQL-black?style=flat-square&logo=mysql)
+
+### Development Tasks for Day to Day Activities including stored procedure, cursor, event 
+
+<img width="180" alt="image" src="https://user-images.githubusercontent.com/25247630/219543934-9b5d5fd8-1b72-4173-b3a4-f16499f954b3.png">
+
+If we consider the enterprise application, we always need to perform specific tasks such as database cleanup, processing payroll, and many more on the database regularly. Such tasks involve multiple SQL statements for executing each task. This process might easy if we group these tasks into a single task. We can fulfill this requirement in MySQL by creating a stored procedure in our database.
+
+### Stored Procedure Features
+
+*) Stored Procedure increases the performance of the applications. Once stored procedures are created, they are compiled and stored in the database.
+
+*) Stored procedure reduces the traffic between application and database server. Because the application has to send only the stored procedure's name and parameters instead of sending multiple SQL statements.
+
+*) Stored procedures are reusable and transparent to any applications.
+
+*) A procedure is always secure. The database administrator can grant permissions to applications that access stored procedures in the database without giving any permissions on the database tables.
+
+    ###Procedure without Parameter
+
+    DELIMITER $$
+    
+    DROP PROCEDURE IF EXISTS `getcount_student` $$
+    
+    CREATE PROCEDURE `getcount_student`()
+    
+    BEGIN 
+    
+    SELECT * FROM student_info WHERE marks > 70;  
+    
+    SELECT COUNT(stud_code) AS Total_Student FROM student_info;    
+
+    END $$
+   
+    DELIMITER ;
+
+Let us call the procedure to verify the output:
+
+    CALL getcount_student();  
+
+
+
+    ###Procedure without Parameter
+
+    DELIMITER $$
+    
+    DROP PROCEDURE IF EXISTS `getcount_student` $$
+    
+    CREATE PROCEDURE `getcount_student`()
+    
+    BEGIN 
+    
+    SELECT * FROM student_info WHERE marks > 70;  
+    
+    SELECT COUNT(stud_code) AS Total_Student FROM student_info;    
+
+    END $$
+   
+    DELIMITER ;
+
+Let us call the procedure to verify the output:
+
+    CALL getcount_student();  
+
 
 ### Partitioning
 
