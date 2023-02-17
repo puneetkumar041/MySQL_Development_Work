@@ -1,13 +1,13 @@
 <img width="150" alt="Screenshot 2023-02-17 at 9 48 17 AM" src="https://user-images.githubusercontent.com/25247630/219548391-874c9fe8-45c8-46a0-ae7e-425659632eb3.png">
 
 
-### Development Tasks for Day to Day Activities including stored procedure, cursor, event 
+### Development Tasks for Day to Day Activities including stored procedures, cursors, events... 
 
 <img width="180" alt="image" src="https://user-images.githubusercontent.com/25247630/219543934-9b5d5fd8-1b72-4173-b3a4-f16499f954b3.png">
 
 If we consider the enterprise application, we always need to perform specific tasks such as database cleanup, processing payroll, and many more on the database regularly. Such tasks involve multiple SQL statements for executing each task. This process might easy if we group these tasks into a single task. We can fulfill this requirement in MySQL by creating a stored procedure in our database.
 
-### Stored Procedure Features
+### Stored Procedure Features...
 
 *) Stored Procedure increases the performance of the applications. Once stored procedures are created, they are compiled and stored in the database.
 
@@ -97,9 +97,9 @@ MySQL has mainly six types of partitioning, which are given below:
 
 Here in this branch we have discussed about Range Partitining 
  
- ### MySQL RANGE Partitioning
+ ### MySQL RANGE Partitioning...
 
 This partitioning allows us to partition the rows of a table based on column values that fall within a specified range. The given range is always in a contiguous form but should not overlap each other, and also uses the VALUES LESS THAN operator to define the ranges.
 
-
+Here we have added script for add partition and remove partition keeping certain number of days partitons and made the process automatic using mysql events
 
