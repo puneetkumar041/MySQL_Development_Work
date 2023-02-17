@@ -70,6 +70,17 @@ Let us call the procedure to verify the output:
 To handle a result set inside a stored procedure, you use a cursor. A cursor allows you to iterate a set of rows returned by a query and process each row individually.
 
 
+###Features of a MySQL Cursor...
+
+*) A cursor is read-only and cannot update or remove data in the result set from the procedure.
+
+*) A cursor needs to be declared before it can be used. The cursor definition is only a step to tell MySQL that such a cursor exists and does not retrieve and data.
+
+*) You can only retrieve data in the order specified by the select statement and not in any reverse order, commonly known as non-scrollable.
+
+*) You use a cursor by opening it and then perform fetch operations on the data stored.
+
+*) You must close a cursor after the fetch operations complete.
 
 
 <img width="144" alt="Screenshot 2023-02-17 at 9 54 23 AM" src="https://user-images.githubusercontent.com/25247630/219549075-24d2b924-f81d-4904-a17d-cfe09b951bc6.png">
@@ -89,10 +100,15 @@ Types of MySQL Partitioning
 MySQL has mainly six types of partitioning, which are given below:
 
 *) RANGE Partitioning
+
 *) LIST Partitioning
+
 *) COLUMNS Partitioning
+
 *) HASH Partitioning
+
 *) KEY Partitioning
+
 *) Subpartitioning
 
 Here in this branch we have discussed about Range Partitining 
