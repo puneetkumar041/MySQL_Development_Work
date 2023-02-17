@@ -146,8 +146,9 @@ The finished is a variable to indicate that the cursor has reached the end of th
 
 	BEGIN 
 
-	DECLARE v_id,v_email int(11);
+	DECLARE v_id int(11);
 	DECLARE v_name varchar(20);
+	DECLARE v_email varchar(100);
 	DECLARE done_handler INT(5) DEFAULT '0';
 	DECLARE done INT DEFAULT 0;
 	DECLARE crsr CURSOR FOR SELECT id,name,email FROM employees where done_flag=0;
