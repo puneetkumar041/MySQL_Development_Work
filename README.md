@@ -111,7 +111,7 @@ MySQL has mainly six types of partitioning, which are given below:
 
 *) Subpartitioning
 
-Here in this branch we have discussed about Range Partitining 
+Here we have discussed about Range Partitining 
  
  ### MySQL RANGE Partitioning...
 
