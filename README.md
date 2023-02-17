@@ -1,5 +1,5 @@
+<img width="150" alt="Screenshot 2023-02-17 at 9 48 17 AM" src="https://user-images.githubusercontent.com/25247630/219548391-874c9fe8-45c8-46a0-ae7e-425659632eb3.png">
 
-![MySQL](https://img.shields.io/badge/-MySQL-black?style=flat-square&logo=mysql)
 
 ### Development Tasks for Day to Day Activities including stored procedure, cursor, event 
 
@@ -64,7 +64,9 @@ Let us call the procedure to verify the output:
     CALL getcount_student();  
 
 
-### Partitioning
+<img width="148" alt="Screenshot 2023-02-17 at 9 19 17 AM" src="https://user-images.githubusercontent.com/25247630/219548154-ac3ee9e3-089c-4762-a614-7fedc5aa73ff.png">
+
+
 
 Partitioning in MySQL is used to split or partition the rows of a table into separate tables in different locations, but still, it is treated as a single table. It distributes the portions of the table's data across a file system based on the rules we have set as our requirement. 
 Benefits of Partitioning
@@ -94,41 +96,3 @@ Here in this branch we have discussed about Range Partitining
 This partitioning allows us to partition the rows of a table based on column values that fall within a specified range. The given range is always in a contiguous form but should not overlap each other, and also uses the VALUES LESS THAN operator to define the ranges.
 
 
-
-### Server Monitoring 
-
-Server monitoring helps to monitor your servers and entire infrastructure for critical performance metrics and stay on top of your data center resources. Get in-depth visibility into key performance indicators of your application servers, mail servers, web servers, virtual servers, and database servers to eliminate outages and performance issues
-
-Monitor below parameters with the help of scripts
-
-*) Service Running or not. 
-
-*) MySQL server's RAM usage 
-
-*) MySQL server's Disk utilization
-
-*) MySQL server's CPU utlization 
-
-*) Load on MySQL Server 
-
-### USER management
-
-MySQL server allows us to create numerous users and databases and grant appropriate privileges so that the users can access and manage databases.
-The information_schema, mysql, performance_schema, and sys databases are created at installation time and they are storing information about all other databases, system configuration, users, permission and other important data. These databases are necessary for the proper functionality of the MySQL installation.
-
-*) User creation  
-
-*) Grants privileges to Database and to Tables  
-
-*) Resetting Passwords
-
-*) Revoking permissions
-
-*) User migrations
-
-### Archiving 
-As the data in MySQL keeps growing, the performance for all the queries will keep decreasing. Typically, queries that originally took milliseconds can now take seconds (or more). That requires a lot of changes (code, MySQL, etc.) to make faster.
-
-The main goal of archiving the data is to increase performance (“make MySQL fast again”), decrease costs and improve ease of maintenance (backup/restore, cloning the replication slave, etc.)
-
-*) Customize archiving script for n number of days 
