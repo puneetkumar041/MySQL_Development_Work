@@ -61,12 +61,18 @@ Let us call the procedure to verify the output:
 
 Let us call the procedure to verify the output:
 
-    CALL getcount_student();  
+    CALL getcount_student(); 
+    
+    
+    
+<img width="98" alt="Screenshot 2023-02-17 at 9 53 52 AM" src="https://user-images.githubusercontent.com/25247630/219549151-1ff5eaaa-edab-471c-b4ca-5e218f19d640.png">
+
+To handle a result set inside a stored procedure, you use a cursor. A cursor allows you to iterate a set of rows returned by a query and process each row individually.
 
 
-<img width="148" alt="Screenshot 2023-02-17 at 9 19 17 AM" src="https://user-images.githubusercontent.com/25247630/219548154-ac3ee9e3-089c-4762-a614-7fedc5aa73ff.png">
 
 
+<img width="144" alt="Screenshot 2023-02-17 at 9 54 23 AM" src="https://user-images.githubusercontent.com/25247630/219549075-24d2b924-f81d-4904-a17d-cfe09b951bc6.png">
 
 Partitioning in MySQL is used to split or partition the rows of a table into separate tables in different locations, but still, it is treated as a single table. It distributes the portions of the table's data across a file system based on the rules we have set as our requirement. 
 Benefits of Partitioning
@@ -94,5 +100,6 @@ Here in this branch we have discussed about Range Partitining
  ### MySQL RANGE Partitioning
 
 This partitioning allows us to partition the rows of a table based on column values that fall within a specified range. The given range is always in a contiguous form but should not overlap each other, and also uses the VALUES LESS THAN operator to define the ranges.
+
 
 
