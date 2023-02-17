@@ -2,19 +2,20 @@
 
 ![SHELL SCRIPT](https://img.shields.io/badge/Shell_Script-121011?style=for-the-badge&logo=gnu-bash&logoColor=white)
 
-### various types of Backup 
+### Partitioning
 
-Mysqldump is a command-line utility that is used to generate the logical backup of the MySQL database. It produces the SQL Statements that can be used to recreate the database objects and data. The command can also be used to generate the output in the XML, delimited text, or CSV format.
+Partitioning in MySQL is used to split or partition the rows of a table into separate tables in different locations, but still, it is treated as a single table. It distributes the portions of the table's data across a file system based on the rules we have set as our requirement. 
+Benefits of Partitioning
 
-*) Full Database Backup
+The following are the benefits of partitioning in MySQL:
 
-*) Table wise Backup
+*) It optimizes the query performance. When we query on the table, it scans only the portion of a table that will satisfy the particular statement.
 
-*) Incremental Backup
+*) It is possible to store extensive data in one table that can be held on a single disk or file system partition.
 
-*) Database Backup and copy to s3 bucket
+*) It provides more control to manage the data in your database.
 
-*) Backup from multiple servers
+
 
  
 ### Server Monitoring 
