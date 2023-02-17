@@ -1,100 +1,61 @@
--- create partion 
+--
 
- drop table if exists trb1;
- CREATE TABLE trb1 (id INT, name VARCHAR(50), purchased DATE)
-    PARTITION BY RANGE(id)
-    (
-        PARTITION p0 VALUES LESS THAN (3),
-        PARTITION p1 VALUES LESS THAN (7),
-        PARTITION p2 VALUES LESS THAN (9),
-        PARTITION p3 VALUES LESS THAN (11),
-        PARTITION p4 VALUES LESS THAN (13),
-        PARTITION p5 VALUES LESS THAN (17),
-        PARTITION pmax VALUES LESS THAN MAXVALUE
-    );
+-- 
+-- Remember to set group_concat_max_len to a high enough value.
+-- I recommend setting it to at least 50000.
+-- 
 
+CREATE DATABASE IF NOT EXISTS tests;
+use tests; 
 
-
-INSERT INTO trb1 VALUES
-    (1, 'desk organiser', '2003-10-15'),
-    (2, 'CD player', '1993-11-05'),
-    (3, 'TV set', '1996-03-10'),
-    (4, 'bookcase', '1982-01-10'),
-    (5, 'exercise bike', '2004-05-09'),
-    (6, 'sofa', '1987-06-05'),
-    (7, 'popcorn maker', '2001-11-22'),
-    (8, 'aquarium', '1992-08-04'),
-    (9, 'study desk', '1984-09-16'),
-    (10, 'lava lamp', '1998-12-25'),
-    (19, 'Jhogn lava ', '1991-01-15');
-
-
--- Add partition
-ALTER TABLE trb1 ADD PARTITION (
-    PARTITION p6 VALUES LESS THAN (19),
+DROP TABLE IF EXISTS logs;
+CREATE TABLE logs (
+    id INT AUTO_INCREMENT NOT NULL,
+    message VARCHAR(500) NOT NULL,
+    code TINYINT UNSIGNED NOT NULL,
+    created DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id,created)
 );
-
-
--- Drop partition
-
-ALTER TABLE trb1 DROP PARTITION p6;
-
-
--- reorganize partition
-ALTER TABLE trb1
-    REORGANIZE PARTITION p6 INTO (
-        PARTITION p6 VALUES LESS THAN (21),
-        PARTITION pmax  VALUES LESS THAN MAXVALUE) ;
-
-
-
-
--- if no pmax value defined. and we insert value greater than range defined 
-ERROR 1526 (HY000): Table has no partition for value 1420137000
-
-
-
-++++++++++++++++++++++++++
--- keep last 2 partion and remove rest
-++++++++++++++++++++++++++
-
-SELECT 
-group_concat(partition_name order by partition_ordinal_position) original_partition,
-substring_index(group_concat(partition_name order by partition_ordinal_position),',',-2) as keep_last_2,
-TRIM( both ',' from replace(group_concat(partition_name order by partition_ordinal_position),substring_index(group_concat(partition_name order by partition_ordinal_position),',',-2),'')) as final_removal,
-concat("ALTER TABLE ",table_name, " DROP PARTITION ",TRIM( both ',' from replace(group_concat(partition_name order by partition_ordinal_position),substring_index(group_concat(partition_name order by partition_ordinal_position),',',-2),'')),";") as removal_query
-FROM information_schema.partitions WHERE TABLE_SCHEMA='test' 
-and partition_name!=''
-group by table_name;
-
-++++++++++++++++++++++++++
-
-`-- automate partitions::`
-
-http://mysql-nordic.blogspot.com/2020/05/automate-mysql-partitioning-using.html
-
-++++++++++++++++++++++++++
-
-
-
-CREATE TABLE IF NOT EXISTS `MyPartTables` (
-  `schema_name` VARCHAR(100) NOT NULL,
-  `table_name` VARCHAR(100) NOT NULL,
-  `no_of_future_partitions` INT NOT NULL,
-  `max_partitions` INT NOT NULL,
-  PRIMARY KEY (`schema_name`,`table_name`)
-);
-
-INSERT INTO MyPartTables VALUES ('ted','logs',2,20);
 
 ALTER TABLE logs PARTITION BY RANGE COLUMNS(created) (
-    PARTITION p20200217 VALUES LESS THAN ('2020-02-17'),
-    PARTITION p20200218 VALUES LESS THAN ('2020-02-18'),
-    PARTITION p20200219 VALUES LESS THAN ('2020-02-19'),
-    PARTITION p20200220 VALUES LESS THAN ('2020-02-20'),
-    PARTITION p20200221 VALUES LESS THAN ('2020-02-21')
+    PARTITION p20230217 VALUES LESS THAN ('2023-02-17'),
+    PARTITION p20230218 VALUES LESS THAN ('2023-02-18'),
+    PARTITION p20230219 VALUES LESS THAN ('2023-02-19'),
+    PARTITION p20230220 VALUES LESS THAN ('2023-02-20'),
+    PARTITION p20230221 VALUES LESS THAN ('2023-02-21')
 );
-       
+
+DROP TABLE IF EXISTS blogs;
+CREATE TABLE blogs (
+    id INT AUTO_INCREMENT NOT NULL,
+    message VARCHAR(500) NOT NULL,
+    code TINYINT UNSIGNED NOT NULL,
+    created DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id,created)
+);
+
+ALTER TABLE blogs PARTITION BY RANGE COLUMNS(created) (
+    PARTITION p20230217 VALUES LESS THAN ('2023-02-17'),
+    PARTITION p20230218 VALUES LESS THAN ('2023-02-18'),
+    PARTITION p20230219 VALUES LESS THAN ('2023-02-19'),
+    PARTITION p20230220 VALUES LESS THAN ('2023-02-20'),
+    PARTITION p20230221 VALUES LESS THAN ('2023-02-21')
+);
+
+-- SELECT * FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_NAME='logs' AND TABLE_SCHEMA='tests'
+
+-- 
+-- Internal stuff to handle partitioning.
+-- Table MyPartTables contains one row per table to manage.
+-- Insert table name, schema name, number of future partitions to create
+-- and max number of partitions to keep before starting to remove old partitions
+--
+-- Two events will run once per day, first event will call a SP to add new partitions,
+-- the second event will call a SP to remove any old partitions. This is done for
+-- all tables that are recorded on MyPartTables.
+-- 
+
+DROP TABLE IF EXISTS MyPartTables;
 CREATE TABLE IF NOT EXISTS `MyPartTables` (
   `schema_name` VARCHAR(100) NOT NULL,
   `table_name` VARCHAR(100) NOT NULL,
@@ -103,10 +64,34 @@ CREATE TABLE IF NOT EXISTS `MyPartTables` (
   PRIMARY KEY (`schema_name`,`table_name`)
 );
 
-INSERT INTO MyPartTables VALUES ('ted','logs',2,20);
+INSERT INTO MyPartTables VALUES ('tests','logs',2,20);
+-- Handle partition for table test.logs, create 2 partitions in the future and
+-- keep only 20 partitions before starting to remove old partitions.
+INSERT INTO MyPartTables VALUES ('tests','blogs',3,5);
+-- Handle partition for table test.blogs, create 3 partitions in the future and
+-- keep only 5 partitions before starting to remove old partitions.
 
 
 
+-- Run SP AddPartition() once per day
+DELIMITER $$
+DROP EVENT IF EXISTS `AddPartitions`;
+CREATE EVENT AddPartitions ON SCHEDULE EVERY 1 day STARTS '2023-02-16 20:00:00' ON COMPLETION
+PRESERVE   
+DO
+  BEGIN
+  CALL AddPartitions();
+END$$
+
+DELIMITER ; 
+
+--
+-- SP that creates new partitions
+-- Only works for RANGE partitions using DAY resolution
+--
+use tests;
+DELIMITER $$
+DROP PROCEDURE IF EXISTS `AddPartitions` $$
 CREATE PROCEDURE `AddPartitions`()
 BEGIN
   DECLARE done   BOOL DEFAULT FALSE;
@@ -144,18 +129,40 @@ BEGIN
     WHILE pdate > maxp DO
        SET maxp = maxp + 1;
        SET pname = CONCAT('p', DATE_FORMAT(FROM_DAYS(maxp), '%Y%m%d'));
-       SET @qry = CONCAT('ALTER TABLE ',v_schema_name,'.',v_table_name, ' ADD PARTITION (PARTITION ',pname,' VALUES LESS THAN ("',DATE_FOR
-MAT(FROM_DAYS(maxp),'%Y-%m-%d'),'"))');
+       SET @qry = CONCAT('ALTER TABLE ',v_schema_name,'.',v_table_name, ' ADD PARTITION (PARTITION ',pname,' VALUES LESS THAN ("',
+       DATE_FORMAT(FROM_DAYS(maxp),'%Y-%m-%d'),'"))');
        -- DEBUG SELECT @qry;
        PREPARE stmt FROM @qry;
        EXECUTE stmt;
        DEALLOCATE PREPARE stmt;
     END WHILE;
   END LOOP;
-END ;;
+END $$
+DELIMITER ;
 
 
-CREATE PROCEDURE RemovePartitions ()
+use tests;
+-- Run SP RemovePartition() once per day
+DELIMITER $$
+DROP EVENT IF EXISTS `AddPartitions`;
+CREATE EVENT AddPartitions ON SCHEDULE EVERY 1 day STARTS '2023-02-16 20:00:00' ON COMPLETION
+PRESERVE   
+DO
+  BEGIN
+  CALL RemovePartition();
+END$$
+
+DELIMITER ; 
+
+--
+-- SP that removes old partitions once you have more than max_partitions
+-- Only works for RANGE partitions using DAY resolution
+--
+
+use tests;
+DELIMITER $$
+DROP PROCEDURE IF EXISTS `AddPartitions` $$
+CREATE PROCEDURE `AddPartitions`()
 BEGIN
   DECLARE done BOOL DEFAULT FALSE;
   DECLARE v_table_name  VARCHAR(100);
@@ -211,18 +218,21 @@ BEGIN
       DEALLOCATE PREPARE stmt;
     END IF;
   END LOOP;
-END ;;
+END $$
+DELIMITER ;
 
-
-
-CREATE EVENT AddPartitions ON SCHEDULE EVERY 1 DAY
-DO
-  BEGIN
-  CALL AddPartitions();
-END ;;
-
-CREATE EVENT RemovePartitions ON SCHEDULE EVERY 1 DAY
-DO
-  BEGIN
-  CALL RemovePartitions();
-END ;;
+-- Run some tests:
+SELECT "========== Tables before AddPartitions ==========" as "";
+SHOW CREATE TABLE logs;
+SHOW CREATE TABLE blogs;
+CALL AddPartitions();
+SELECT "========== Tables after  AddPartitions ==========" as "";
+SHOW CREATE TABLE logs;
+SHOW CREATE TABLE blogs;
+CALL RemovePartitions();
+SELECT "========== Tables after RemovePartitions ===========" as "";
+SHOW CREATE TABLE logs;
+SHOW CREATE TABLE blogs;
+SELECT "========== Contect of MyPartTables ==========" as "";
+SELECT * FROM MyPartTables;
+SHOW EVENTS;
